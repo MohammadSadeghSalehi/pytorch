@@ -85,9 +85,14 @@ def _pick_block_sizes(m: int, n: int) -> tuple[int, int]:
 def _bmm_outer_product_launch_config(
     batch: int, m: int, n: int
 ) -> tuple[int, int, int]:
+    """Return the 1D grid size and block sizes used to launch the kernel.
+
+    The grid has one entry for every (batch, M tile, N tile). Sharing this
+    calculation with the safety guard keeps the checked and launched grids identical.
+    """
     block_m, block_n = _pick_block_sizes(m, n)
-    num_programs = batch * triton.cdiv(m, block_m) * triton.cdiv(n, block_n)
-    return num_programs, block_m, block_n
+    grid_size = batch * triton.cdiv(m, block_m) * triton.cdiv(n, block_n)
+    return grid_size, block_m, block_n
 
 
 def bmm_outer_product(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -96,11 +101,11 @@ def bmm_outer_product(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
 
     out = torch.empty(B, M, N, dtype=a.dtype, device=a.device)
 
-    num_programs, BLOCK_M, BLOCK_N = _bmm_outer_product_launch_config(B, M, N)
+    grid_size, BLOCK_M, BLOCK_N = _bmm_outer_product_launch_config(B, M, N)
 
     # a and b are read-only inputs; wrap them so a copy-on-write tensor is read
     # through const_data_ptr() and not materialized. out is written directly.
-    _bmm_outer_product_kernel[(num_programs,)](
+    _bmm_outer_product_kernel[(grid_size,)](
         ConstTensorWrapper(a),
         ConstTensorWrapper(b),
         out,
