@@ -7,7 +7,9 @@ from torch._native.instrumentation import instrumented_triton_cache
 from ...triton import ConstTensorWrapper
 
 
-_BMM_OUTER_PRODUCT_NUM_WARPS = 4
+# Pin Triton's current default so the launch and its safety check use the
+# same number of warps.
+_TRITON_DEFAULT_NUM_WARPS = 4
 
 
 def _bmm_log_key(a, b, out, B, M, N, *strides, BLOCK_M, BLOCK_N, num_warps) -> str:
@@ -114,6 +116,6 @@ def bmm_outer_product(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         out.stride(2),
         BLOCK_M=BLOCK_M,
         BLOCK_N=BLOCK_N,
-        num_warps=_BMM_OUTER_PRODUCT_NUM_WARPS,
+        num_warps=_TRITON_DEFAULT_NUM_WARPS,
     )
     return out

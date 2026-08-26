@@ -96,11 +96,11 @@ class TestBmmOuterProductDevice(TestCase):
     @skipCUDAIfNotRocm
     def test_hip_grid_limit_fallback(self, device):
         from torch._native.ops.bmm_outer_product.triton_kernels import (
-            _BMM_OUTER_PRODUCT_NUM_WARPS,
+            _TRITON_DEFAULT_NUM_WARPS,
         )
 
         warp_size = torch.cuda.get_device_properties(device).warp_size
-        threads_per_program = _BMM_OUTER_PRODUCT_NUM_WARPS * warp_size
+        threads_per_program = _TRITON_DEFAULT_NUM_WARPS * warp_size
         batch = HIP_MAX_LAUNCH_THREADS // threads_per_program + 1
         self.assertLessEqual((batch - 1) * threads_per_program, HIP_MAX_LAUNCH_THREADS)
         self.assertGreater(batch * threads_per_program, HIP_MAX_LAUNCH_THREADS)

@@ -45,7 +45,7 @@ def _is_hip_grid_safe(a: torch.Tensor, b: torch.Tensor) -> bool:
 
     from .triton_kernels import (
         _bmm_outer_product_launch_config,
-        _BMM_OUTER_PRODUCT_NUM_WARPS,
+        _TRITON_DEFAULT_NUM_WARPS,
     )
 
     batch, m, _ = a.shape
@@ -53,7 +53,7 @@ def _is_hip_grid_safe(a: torch.Tensor, b: torch.Tensor) -> bool:
     num_programs, _, _ = _bmm_outer_product_launch_config(batch, m, n)
     warp_size = torch.cuda.get_device_properties(a.device).warp_size
     return (
-        num_programs * _BMM_OUTER_PRODUCT_NUM_WARPS * warp_size
+        num_programs * _TRITON_DEFAULT_NUM_WARPS * warp_size
         <= HIP_MAX_LAUNCH_THREADS
     )
 
